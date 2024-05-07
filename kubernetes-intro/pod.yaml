@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-server
+  namespace: homework
+  labels:
+    app.kubernetes.io/name: web-server
+spec:
+  containers:
+    - name: web-server
+      image: busybox:1.36.1
+      command: ["/bin/sh", "-c", "httpd -f -p 8000 -h /homework"]
+      ports:
+        - containerPort: 8000
+          name: http
+      volumeMounts:
+        - name: www-public
+          mountPath: "/homework"
+      lifecycle:
+        preStop:
+          exec:
+            command: ["/bin/sh","-c","rm -f /homework/index.html"]
+  initContainers:
+    - name: init-web-server
+      image: busybox:1.36.1
+      command:
+        [
+          "/bin/sh",
+          "-c",
+          'echo \<h1\>Hello Kuber-2024-04OTUS team !!! \</h1\> > /init/index.html',
+        ]
+      volumeMounts:
+        - name: www-public
+          mountPath: "/init"
+  volumes:
+    - name: www-public
+      emptyDir:
+
+  restartPolicy: Always
