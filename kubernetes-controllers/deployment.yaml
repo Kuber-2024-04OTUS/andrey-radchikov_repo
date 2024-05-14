@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  kubernetes-controllers
+  namespace: homework
+  labels:
+    app:  kubernetes-controllers
+spec:
+  selector:
+    matchLabels:
+      app: kubernetes-controllers
+  minReadySeconds: 15
+  replicas: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app:  kubernetes-controllers
+    spec:
+      containers:
+        - name: web-server
+          image: busybox:1.36.1
+          command: ["/bin/sh", "-c", "httpd -f -p 8000 -h /homework"]
+          ports:
+            - containerPort: 8000
+              name: http
+          volumeMounts:
+            - name: www-public
+              mountPath: "/homework"
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh","-c","rm -f /homework/index.html"]
+          readinessProbe:
+            exec:
+              command:
+              - test
+              - -f
+              - /homework/index.html
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      nodeSelector:
+        node-homework: 'true'
+      initContainers:
+        - name: init-web-server
+          image: busybox:1.36.1
+          command:
+            [
+              "/bin/sh",
+              "-c",
+              'echo \<h1\>Hello Kuber-2024-04OTUS team !!! \</h1\> > /init/index.html',
+            ]
+          volumeMounts:
+            - name: www-public
+              mountPath: "/init"
+      volumes:
+        - name: www-public
+          emptyDir:
+
+      restartPolicy: Always
